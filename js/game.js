@@ -3,64 +3,68 @@ var game = new Phaser.Game(1000, 600, Phaser.AUTO, 'game_container', { preload: 
 function preload() {
 
     game.load.image('ground', 'assets/sprites/ground_stage_01.png');
-    game.load.spritesheet('ss_john', 'assets/sprites/spritesheet_john.png', 20, 70);
-    game.load.spritesheet('ss_zombie', 'assets/sprites/spritesheet_zombie.png', 20, 70);
-    game.load.image('bullet', 'assets/sprites/bullet.png');
+    game.load.spritesheet('ss_john', 'assets/sprites/spritesheet_john_complete.png', 20, 70);
+    game.load.spritesheet('ss_zombie', 'assets/sprites/spritesheet_zombie_complete.png', 20, 70);
+    //game.load.image('bullet', 'assets/sprites/bullet.png');
     game.load.image('dot', 'assets/sprites/white_dot.png');
 
 }
 
-var player;
+var john;
 var zombies;
 var walls;
 var bullets;
+var gameState = new function () {
+    this.score = 0;
+    this.lastPressedButton = "down"; // expects up, down, left, right
+    this.keySpriteMap = {
+        up: 4,
+        right: 8,
+        down: 0,
+        left: 15
+    };
+    this.horizontallyFlipped = false;
+};
 
 
 function createSprites(){
     game.add.sprite(0, 0, "ground"); // craeting the ground
 
     
-    walls = game.add.group(); // groups all the walls in the game
+    walls = game.add.group(); // sprite group to group all the walls in the game
     walls.enableBody = true; // enables physics for all group members
+    createWalls(walls)
 
-    var wallBlock = walls.create(160, 0, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 20;
-    wallBlock.scale.y = 300;    
-    wallBlock.tint = 0xff0000;
+    john = game.add.sprite(50, 0, 'ss_john');
+    game.physics.arcade.enable(john);    
+    john.body.collideWorldBounds = true;
 
-    wallBlock = walls.create(160, 400, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 20;
-    wallBlock.scale.y = 200;    
-    wallBlock.tint = 0xff0000;
+    john.animations.add('up', [4, 5 ,6 , 7], 10, true);
+    john.animations.add('down', [0, 1, 2, 3], 10, true);
+    john.animations.add('left', [15, 14, 13, 12], 10, true);
+    john.animations.add('right', [8, 9, 10, 11], 10, true);
 
-    wallBlock = walls.create(180, 0, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 340;
-    wallBlock.scale.y = 55;    
-    wallBlock.tint = 0xff0000;
+    zombies = game.add.group();
+    
+    bullets = game.add.group();
 
-    wallBlock = walls.create(800, 0, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 200;
-    wallBlock.scale.y = 175;    
-    wallBlock.tint = 0xff0000;
+}
 
-    wallBlock = walls.create(320, 440, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 320;
-    wallBlock.scale.y = 160;    
-    wallBlock.tint = 0xff0000;
+function createWalls(walls){
+    createWall(walls, "dot", 160, 0, 20, 300);
+    createWall(walls, "dot", 160, 400, 20, 200);
+    createWall(walls, "dot", 180, 0, 340, 55);
+    createWall(walls, "dot", 800, 0, 200, 175);
+    createWall(walls, "dot", 320, 440, 320, 160);
+    createWall(walls, "dot", 680, 560, 320, 40);
+}
 
-    wallBlock = walls.create(680, 560, "dot");
-    wallBlock.body.immovable = true;
-    wallBlock.scale.x = 320;
-    wallBlock.scale.y = 40;    
-    wallBlock.tint = 0xff0000;
-
-
-
+function createWall(wallGroup, spriteId, x, y, width, height){
+    var wall = wallGroup.create(x, y, spriteId);
+    wall.body.immovable = true;
+    wall.scale.x = width;
+    wall.scale.y = height;    
+    wall.tint = 0xff0000;
 }
 
 function create() {
@@ -69,127 +73,56 @@ function create() {
 
     createSprites();
 
-
-
-
-
-    /*
-    
-
-    // Here we create the ground.
-    var ground = platforms.create(0, game.world.height - 64, 'ground');
-
-    //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    ground.scale.setTo(2, 2);
-
-    //  This stops it from falling away when you jump on it
-    ground.body.immovable = true;
-
-    //  Now let's create two ledges
-    var ledge = platforms.create(400, 400, 'ground');
-    ledge.body.immovable = true;
-
-    ledge = platforms.create(-150, 250, 'ground');
-    ledge.body.immovable = true;
-
-    // The player and its settings
-    player = game.add.sprite(32, game.world.height - 150, 'dude');
-
-    //  We need to enable physics on the player
-    game.physics.arcade.enable(player);
-
-    //  Player physics properties. Give the little guy a slight bounce.
-    player.body.bounce.y = 0.2;
-    player.body.gravity.y = 300;
-    player.body.collideWorldBounds = true;
-
-    //  Our two animations, walking left and right.
-    player.animations.add('left', [0, 1, 2, 3], 10, true);
-    player.animations.add('right', [5, 6, 7, 8], 10, true);
-
-    //  Finally some stars to collect
-    stars = game.add.group();
-
-    //  We will enable physics for any star that is created in this group
-    stars.enableBody = true;
-
-    //  Here we'll create 12 of them evenly spaced apart
-    for (var i = 0; i < 12; i++)
-    {
-        //  Create a star inside of the 'stars' group
-        var star = stars.create(i * 70, 0, 'star');
-
-        //  Let gravity do its thing
-        star.body.gravity.y = 300;
-
-        //  This just gives each star a slightly random bounce value
-        star.body.bounce.y = 0.7 + Math.random() * 0.2;
-    }
-
-    //  The score
-    scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
-
-    //  Our controls.
     cursors = game.input.keyboard.createCursorKeys();
 
-    */
-    
+    john.frame = 0;
+
 }
 
 function update() {
+    // checks collisions betwenn john and wall, and between zombies and walls
+    game.physics.arcade.collide(john, walls);
+    game.physics.arcade.collide(zombies, walls);
+    // checks overlaps between john and zombies, and between bullets and zombies
+    game.physics.arcade.overlap(john, zombies, gameOver, null, this); // in case of overlap, ends the game
+    game.physics.arcade.overlap(bullets, zombies, killZombie, null, this); // in case of overlap, kills the zombie hit
 
-    /*
-
-    //  Collide the player and the stars with the platforms
-    game.physics.arcade.collide(player, platforms);
-    game.physics.arcade.collide(stars, platforms);
-
-    //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
-    game.physics.arcade.overlap(player, stars, collectStar, null, this);
-
-    //  Reset the players velocity (movement)
-    player.body.velocity.x = 0;
-
-    if (cursors.left.isDown)
-    {
-        //  Move to the left
-        player.body.velocity.x = -150;
-
-        player.animations.play('left');
-    }
-    else if (cursors.right.isDown)
-    {
-        //  Move to the right
-        player.body.velocity.x = 150;
-
-        player.animations.play('right');
-    }
-    else
-    {
-        //  Stand still
-        player.animations.stop();
-
-        player.frame = 4;
-    }
-    
-    //  Allow the player to jump if they are touching the ground.
-    if (cursors.up.isDown && player.body.touching.down)
-    {
-        player.body.velocity.y = -350;
-    }
-
-    */
+    updatePlayer();
 
 }
 
-function collectStar (player, star) {
-    
-    // Removes the star from the screen
-    star.kill();
+function updatePlayer(){
+    //  Reset the player velocity (movement)
+    john.body.velocity.x = 0;
+    john.body.velocity.y = 0;
 
-    //  Add and update the score
-    score += 10;
-    scoreText.text = 'Score: ' + score;
+    if (cursors.left.isDown){
+        gameState.lastPressedButton = "left";
+        john.body.velocity.x = -200; // moves left
+        john.animations.play('left');
+    } else if (cursors.right.isDown){
+        gameState.lastPressedButton = "right";
+        john.body.velocity.x = 200; // moves down
+        john.animations.play('right');
+    } else if (cursors.up.isDown){
+        gameState.lastPressedButton = "up";
+        john.body.velocity.y = -200; // moves down
+        john.animations.play('up');
+    } else if (cursors.down.isDown){
+        gameState.lastPressedButton = "down";
+        john.body.velocity.y = 200; // moves down
+        john.animations.play('down');
+    } else {
+        john.animations.stop();
+        john.frame = gameState.keySpriteMap[gameState.lastPressedButton];
+    }
+}
 
+function gameOver(john, zombie){
+
+}
+
+function killZombie (bullet, zombie) {
+    zombie.kill(); // removes the sprite
 }
 
