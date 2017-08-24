@@ -5,7 +5,7 @@ function preload() {
     game.load.image('ground', 'assets/sprites/ground_stage_01.png');
     game.load.spritesheet('ss_john', 'assets/sprites/spritesheet_john_complete.png', 20, 70);
     game.load.spritesheet('ss_zombie', 'assets/sprites/spritesheet_zombie_complete.png', 20, 70);
-    //game.load.image('bullet', 'assets/sprites/bullet.png');
+    game.load.image('bullet', 'assets/sprites/bullet.png');
     game.load.image('dot', 'assets/sprites/white_dot.png');
 
 }
@@ -24,7 +24,9 @@ var gameState = new function () {
         left: 15
     };
     this.horizontallyFlipped = false;
+    this.lastBulletTime = 0; // in milliseconds
 };
+var spaceBar;
 
 
 function createSprites(){
@@ -47,6 +49,7 @@ function createSprites(){
     zombies = game.add.group();
     
     bullets = game.add.group();
+    
 
 }
 
@@ -74,6 +77,7 @@ function create() {
     createSprites();
 
     cursors = game.input.keyboard.createCursorKeys();
+    spaceBar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
     john.frame = 0;
 
@@ -116,6 +120,15 @@ function updatePlayer(){
         john.animations.stop();
         john.frame = gameState.keySpriteMap[gameState.lastPressedButton];
     }
+
+    if (spaceBar.isDown){
+        var currentTime = (new Date()).getTime();
+        if ((currentTime - gameState.lastBulletTime) >= 500){
+            shoot();
+            gameState.lastBulletTime = currentTime;
+        }  
+        
+    }
 }
 
 function gameOver(john, zombie){
@@ -126,3 +139,7 @@ function killZombie (bullet, zombie) {
     zombie.kill(); // removes the sprite
 }
 
+function shoot(){
+    var bullet = bullets.create(john.x + 10, john.y + 25, "bullet"); // aproximatelly in the middle of the main character
+
+}
