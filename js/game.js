@@ -49,7 +49,12 @@ function createSprites(){
     zombies = game.add.group();
     
     bullets = game.add.group();
-    
+    // https://phaser.io/examples/v2/input/keyboard-justpressed
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+    bullets.createMultiple(20, 'bullet');
+    bullets.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', removeBullet, this);
+    bullets.setAll('checkWorldBounds', true);
 
 }
 
@@ -90,8 +95,18 @@ function update() {
     // checks overlaps between john and zombies, and between bullets and zombies
     game.physics.arcade.overlap(john, zombies, gameOver, null, this); // in case of overlap, ends the game
     game.physics.arcade.overlap(bullets, zombies, killZombie, null, this); // in case of overlap, kills the zombie hit
+    game.physics.arcade.overlap(bullets, walls, removeBullet, null, this);
 
     updatePlayer();
+
+    if (spaceBar.isDown){
+        var currentTime = (new Date()).getTime();
+        if ((currentTime - gameState.lastBulletTime) >= 500){
+            shoot();
+            gameState.lastBulletTime = currentTime;
+        }  
+        
+    }
 
 }
 
@@ -119,16 +134,7 @@ function updatePlayer(){
     } else {
         john.animations.stop();
         john.frame = gameState.keySpriteMap[gameState.lastPressedButton];
-    }
-
-    if (spaceBar.isDown){
-        var currentTime = (new Date()).getTime();
-        if ((currentTime - gameState.lastBulletTime) >= 500){
-            shoot();
-            gameState.lastBulletTime = currentTime;
-        }  
-        
-    }
+    }   
 }
 
 function gameOver(john, zombie){
@@ -140,6 +146,34 @@ function killZombie (bullet, zombie) {
 }
 
 function shoot(){
-    var bullet = bullets.create(john.x + 10, john.y + 25, "bullet"); // aproximatelly in the middle of the main character
+    bullet = bullets.getFirstExists(false);
+    if (bullet){
+        bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character's chest
+        setBulletBodyVelocity(bullet, gameState.lastPressedButton)
+    }
+    //var bullet = bullets.create(john.x + 10, john.y + 25, "bullet"); 
+}
 
+function setBulletBodyVelocity(bullet, characterOrientation){
+    bullet.body.velocity.x = 0;
+    bullet.body.velocity.y = 0;
+
+    switch (characterOrientation){
+        case "up":
+            bullet.body.velocity.y = -500;
+            break;
+        case "right":
+            bullet.body.velocity.x = 500;
+            break;
+        case "down":
+            bullet.body.velocity.y = 500;
+            break;
+        case "left":
+            bullet.body.velocity.x = -500;
+            break;
+    }
+}
+
+function removeBullet(bullet){
+    bullet.kill();
 }
