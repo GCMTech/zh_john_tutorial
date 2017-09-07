@@ -25,6 +25,7 @@ var gameState = new function () {
     };
     this.horizontallyFlipped = false;
     this.lastBulletTime = 0; // in milliseconds
+    this.lastZombieTime = 0; // in milliseconds
 };
 var spaceBar;
 
@@ -45,8 +46,6 @@ function createSprites(){
     john.animations.add('down', [0, 1, 2, 3], 10, true);
     john.animations.add('left', [15, 14, 13, 12], 10, true);
     john.animations.add('right', [8, 9, 10, 11], 10, true);
-
-    zombies = game.add.group();
     
     bullets = game.add.group();
     // https://phaser.io/examples/v2/input/keyboard-justpressed
@@ -55,6 +54,18 @@ function createSprites(){
     bullets.createMultiple(20, 'bullet');
     bullets.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', removeBullet, this);
     bullets.setAll('checkWorldBounds', true);
+
+    zombies = game.add.group();
+    zombies.enableBody = true;
+    zombies.physicsBodyType = Phaser.Physics.ARCADE;
+    zombies.createMultiple(30, 'ss_zombie');
+    zombies.setAll('body.collideWorldBounds', true);
+    zombies.callAll("animations.add", "animations", "up", [4, 5 ,6 , 7], 10, true);
+    zombies.callAll("animations.add", "animations", "down", [0, 1, 2, 3], 10, true);
+    zombies.callAll("animations.add", "animations", "left", [15, 14, 13, 12], 10, true);
+    zombies.callAll("animations.add", "animations", "right", [8, 9, 10, 11], 10, true);
+    //zombies.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', killZombie, this);
+    //zombies.setAll('checkWorldBounds', true);
 
 }
 
@@ -92,22 +103,15 @@ function update() {
     // checks collisions betwenn john and wall, and between zombies and walls
     game.physics.arcade.collide(john, walls);
     game.physics.arcade.collide(zombies, walls);
+    game.physics.arcade.collide(zombies, zombies);
     // checks overlaps between john and zombies, and between bullets and zombies
     game.physics.arcade.overlap(john, zombies, gameOver, null, this); // in case of overlap, ends the game
     game.physics.arcade.overlap(bullets, zombies, killZombie, null, this); // in case of overlap, kills the zombie hit
     game.physics.arcade.overlap(bullets, walls, removeBullet, null, this);
 
     updatePlayer();
-
-    if (spaceBar.isDown){
-        var currentTime = (new Date()).getTime();
-        if ((currentTime - gameState.lastBulletTime) >= 500){
-            shoot();
-            gameState.lastBulletTime = currentTime;
-        }  
-        
-    }
-
+    updateBullets();
+    updateZombies();
 }
 
 function updatePlayer(){
@@ -137,16 +141,121 @@ function updatePlayer(){
     }   
 }
 
-function gameOver(john, zombie){
+function updateBullets(){
+    if (spaceBar.isDown){
+        var currentTime = (new Date()).getTime();
+        if ((currentTime - gameState.lastBulletTime) >= 500){
+            shoot();
+            gameState.lastBulletTime = currentTime;
+        }  
+        
+    }
+}
 
+function updateZombies(){
+    var currentTime = (new Date()).getTime();
+    // checks if it should create a new zombie or not
+    if (((currentTime - gameState.lastZombieTime) >= 1000) && (getRandomInt(2) == 1)){
+        // creates a zombie if the number of zombies is <= the number set in zombies.createMultiple
+        var zombie = zombies.getFirstExists(false);
+        if (zombie){
+            // chooses the spawn point randomly
+            var spawnPoint = getZombieSpawnPoint(getRandomInt(3)); // 3 possible places
+            zombie.reset(spawnPoint.x, spawnPoint.y);
+
+            gameState.lastZombieTime = currentTime;
+        }
+    } 
+
+    zombies.forEach(function(zombie){
+        if (!("lastActionTime" in zombie)){ // checks if zombie already has the lastActionTime property
+            zombie.lastActionTime = 0;
+        }
+
+        var currentTime = (new Date()).getTime();
+
+        if (((currentTime - zombie.lastActionTime) >= 2000)){
+            // decide action
+            var zombieAction = getZombieAction(getRandomInt(5));
+            // action
+            zombie.body.velocity.x = zombieAction.x;
+            zombie.body.velocity.y = zombieAction.y;
+            zombie.animations.play(zombieAction.animation);
+            zombie.lastActionTime = currentTime;
+        }
+    });
+    
+
+
+}
+
+function getZombieSpawnPoint(locationNumber){
+    var locationCoordinates = {};
+    switch(locationNumber){
+        case 0:
+            locationCoordinates.x = 620;
+            locationCoordinates.y = 0;
+            break;
+        case 1:
+            locationCoordinates.x = 200;
+            locationCoordinates.y = 530;
+            break;
+        case 2:
+            locationCoordinates.x = 980;
+            locationCoordinates.y = 430;
+            break;
+    }
+
+    return locationCoordinates;
+}
+
+function getZombieAction(actionNumber){
+    var bodySpeed = {};
+    switch(actionNumber){
+        case 0:
+            // walk up
+            bodySpeed.x = 0;
+            bodySpeed.y = -100;
+            bodySpeed.animation = "up";
+            break;
+        case 1:
+            // walk right
+            bodySpeed.x = 100;
+            bodySpeed.y = 0;
+            bodySpeed.animation = "right";
+            break;
+        case 2:
+            // walk down
+            bodySpeed.x = 0;
+            bodySpeed.y = 100;
+            bodySpeed.animation = "down";
+            break;
+        case 3:
+            // walk left
+            bodySpeed.x = -100;
+            bodySpeed.y = 0;
+            bodySpeed.animation = "left";
+            break;
+        case 4:
+            // stand still
+            bodySpeed.x = 0;
+            bodySpeed.y = 0;
+            break;
+    }
+    return bodySpeed;
+}
+
+function gameOver(john, zombie){
+    game.state.restart();
 }
 
 function killZombie (bullet, zombie) {
     zombie.kill(); // removes the sprite
+    removeBullet(bullet);
 }
 
 function shoot(){
-    bullet = bullets.getFirstExists(false);
+    var bullet = bullets.getFirstExists(false);
     if (bullet){
         bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character's chest
         setBulletBodyVelocity(bullet, gameState.lastPressedButton)
@@ -176,4 +285,9 @@ function setBulletBodyVelocity(bullet, characterOrientation){
 
 function removeBullet(bullet){
     bullet.kill();
+}
+
+// n defines the interval of possible results, being it like [0, n)
+function getRandomInt(n){
+    return Math.floor(Math.random() * 10) % n
 }
