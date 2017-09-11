@@ -8,12 +8,17 @@ function preload() {
     game.load.image('bullet', 'assets/sprites/bullet.png');
     game.load.image('dot', 'assets/sprites/white_dot.png');
 
+    game.load.audio('shoot', ['assets/audio/shoot.mp3','assets/audio/shoot.ogg']);
+
 }
 
 var john;
 var zombies;
 var walls;
 var bullets;
+var cursors;
+var spaceBar;
+var shoot_audio;
 var gameState = new function () {
     this.score = 0;
     this.lastPressedButton = "down"; // expects up, down, left, right
@@ -26,9 +31,8 @@ var gameState = new function () {
     this.horizontallyFlipped = false;
     this.lastBulletTime = 0; // in milliseconds
     this.lastZombieTime = 0; // in milliseconds
+    this.audioDecoded = false;
 };
-var spaceBar;
-
 
 function createSprites(){
     game.add.sprite(0, 0, "ground"); // craeting the ground
@@ -92,6 +96,14 @@ function create() {
 
     createSprites();
 
+    shoot_audio = game.add.audio('shoot');
+
+    // Comment took from: https://phaser.io/examples/v2/audio/sound-complete
+    // Being mp3 files these take time to decode, so we can't play them instantly
+    // Using setDecodedCallback we can be notified when they're ALL ready for use.
+    // The audio files could decode in ANY order, we can never be sure which it'll be.
+    game.sound.setDecodedCallback([ shoot_audio ], setAudioDecoded, this);
+
     cursors = game.input.keyboard.createCursorKeys();
     spaceBar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
@@ -142,7 +154,7 @@ function updatePlayer(){
 }
 
 function updateBullets(){
-    if (spaceBar.isDown){
+    if (spaceBar.isDown && gameState.audioDecoded){
         var currentTime = (new Date()).getTime();
         if ((currentTime - gameState.lastBulletTime) >= 500){
             shoot();
@@ -259,6 +271,7 @@ function shoot(){
     if (bullet){
         bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character's chest
         setBulletBodyVelocity(bullet, gameState.lastPressedButton)
+        shoot_audio.play();
     }
     //var bullet = bullets.create(john.x + 10, john.y + 25, "bullet"); 
 }
@@ -290,4 +303,8 @@ function removeBullet(bullet){
 // n defines the interval of possible results, being it like [0, n)
 function getRandomInt(n){
     return Math.floor(Math.random() * 10) % n
+}
+
+function setAudioDecoded(){
+    gameState.audioDecoded = true;
 }
