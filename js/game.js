@@ -7,6 +7,7 @@ function preload() {
     game.load.spritesheet('ss_zombie', 'assets/sprites/spritesheet_zombie_complete.png', 20, 70);
     game.load.image('bullet', 'assets/sprites/bullet.png');
     game.load.image('dot', 'assets/sprites/white_dot.png');
+    game.load.image('black_screen', 'assets/sprites/black_screen.png');
 
     game.load.audio('shoot', ['assets/audio/shoot.mp3','assets/audio/shoot.ogg']);
 
@@ -18,8 +19,11 @@ var walls;
 var bullets;
 var cursors;
 var spaceBar;
-var shoot_audio;
-var gameState = new function () {
+var shootAudio;
+var scoreText;
+var gameState = new GameState();
+
+function GameState() {
     this.score = 0;
     this.lastPressedButton = "down"; // expects up, down, left, right
     this.keySpriteMap = {
@@ -36,7 +40,6 @@ var gameState = new function () {
 
 function createSprites(){
     game.add.sprite(0, 0, "ground"); // craeting the ground
-
     
     walls = game.add.group(); // sprite group to group all the walls in the game
     walls.enableBody = true; // enables physics for all group members
@@ -96,18 +99,20 @@ function create() {
 
     createSprites();
 
-    shoot_audio = game.add.audio('shoot');
+    shootAudio = game.add.audio('shoot');
 
     // Comment took from: https://phaser.io/examples/v2/audio/sound-complete
     // Being mp3 files these take time to decode, so we can't play them instantly
     // Using setDecodedCallback we can be notified when they're ALL ready for use.
     // The audio files could decode in ANY order, we can never be sure which it'll be.
-    game.sound.setDecodedCallback([ shoot_audio ], setAudioDecoded, this);
+    game.sound.setDecodedCallback([shootAudio], setAudioDecoded, this);
 
     cursors = game.input.keyboard.createCursorKeys();
     spaceBar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
     john.frame = 0;
+
+    scoreText = game.add.text(20, 560, 'Score: ', {font: "15px Arial", fill: "#ffffff"});
 
 }
 
@@ -124,6 +129,8 @@ function update() {
     updatePlayer();
     updateBullets();
     updateZombies();
+
+    scoreText.setText("Score: " + gameState.score);
 }
 
 function updatePlayer(){
@@ -258,12 +265,29 @@ function getZombieAction(actionNumber){
 }
 
 function gameOver(john, zombie){
+    game.paused = true;
+    game.add.sprite(0, 0, "black_screen");
+    var finalResultsText = game.add.text(game.world.centerX, game.world.centerY,
+        "Game Over\n\nYour final score is:\n" + gameState.score + "\n\nPress SPACE to try again", 
+        {
+            font: "60px Arial", 
+            fill: "#ffffff",
+            align: "center"
+        });
+    finalResultsText.anchor.setTo(0.5, 0.5);
+    spaceBar.onDown.add(restartGame, this);
+}
+ 
+function restartGame(){
+    game.paused = false;
+    gameState = new GameState();
     game.state.restart();
 }
 
 function killZombie (bullet, zombie) {
     zombie.kill(); // removes the sprite
     removeBullet(bullet);
+    gameState.score = gameState.score + 10; // increases score
 }
 
 function shoot(){
@@ -271,7 +295,7 @@ function shoot(){
     if (bullet){
         bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character's chest
         setBulletBodyVelocity(bullet, gameState.lastPressedButton)
-        shoot_audio.play();
+        shootAudio.play();
     }
     //var bullet = bullets.create(john.x + 10, john.y + 25, "bullet"); 
 }
