@@ -1,15 +1,15 @@
-var game = new Phaser.Game(1000, 600, Phaser.AUTO, 'game_container', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(1000, 600, Phaser.AUTO, "game_container", { preload: preload, create: create, update: update });
 
 function preload() {
 
-    game.load.image('ground', 'assets/sprites/ground_stage_01.png');
-    game.load.spritesheet('ss_john', 'assets/sprites/spritesheet_john_complete.png', 20, 70);
-    game.load.spritesheet('ss_zombie', 'assets/sprites/spritesheet_zombie_complete.png', 20, 70);
-    game.load.image('bullet', 'assets/sprites/bullet.png');
-    game.load.image('dot', 'assets/sprites/white_dot.png');
-    game.load.image('black_screen', 'assets/sprites/black_screen.png');
+    game.load.image("ground", "assets/sprites/ground_stage_01.png");
+    game.load.spritesheet("ss_john", "assets/sprites/spritesheet_john_complete.png", 20, 70);
+    game.load.spritesheet("ss_zombie", "assets/sprites/spritesheet_zombie_complete.png", 20, 70);
+    game.load.image("bullet", "assets/sprites/bullet.png");
+    game.load.image("dot", "assets/sprites/white_dot.png");
+    game.load.image("black_screen", "assets/sprites/black_screen.png");
 
-    game.load.audio('shoot', ['assets/audio/shoot.mp3','assets/audio/shoot.ogg']);
+    game.load.audio("shoot", ["assets/audio/shoot.mp3","assets/audio/shoot.ogg"]);
 
 }
 
@@ -45,34 +45,34 @@ function createSprites(){
     walls.enableBody = true; // enables physics for all group members
     createWalls(walls)
 
-    john = game.add.sprite(50, 0, 'ss_john');
+    john = game.add.sprite(50, 0, "ss_john");
     game.physics.arcade.enable(john);    
     john.body.collideWorldBounds = true;
 
-    john.animations.add('up', [4, 5 ,6 , 7], 10, true);
-    john.animations.add('down', [0, 1, 2, 3], 10, true);
-    john.animations.add('left', [15, 14, 13, 12], 10, true);
-    john.animations.add('right', [8, 9, 10, 11], 10, true);
+    john.animations.add("up", [4, 5 ,6 , 7], 10, true);
+    john.animations.add("down", [0, 1, 2, 3], 10, true);
+    john.animations.add("left", [15, 14, 13, 12], 10, true);
+    john.animations.add("right", [8, 9, 10, 11], 10, true);
     
     bullets = game.add.group();
     // https://phaser.io/examples/v2/input/keyboard-justpressed
     bullets.enableBody = true;
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
-    bullets.createMultiple(20, 'bullet');
-    bullets.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', removeBullet, this);
-    bullets.setAll('checkWorldBounds', true);
+    bullets.createMultiple(20, "bullet");
+    bullets.callAll("events.onOutOfBounds.add", "events.onOutOfBounds", removeBullet, this);
+    bullets.setAll("checkWorldBounds", true);
 
     zombies = game.add.group();
     zombies.enableBody = true;
     zombies.physicsBodyType = Phaser.Physics.ARCADE;
-    zombies.createMultiple(30, 'ss_zombie');
-    zombies.setAll('body.collideWorldBounds', true);
+    zombies.createMultiple(30, "ss_zombie");
+    zombies.setAll("body.collideWorldBounds", true);
     zombies.callAll("animations.add", "animations", "up", [4, 5 ,6 , 7], 10, true);
     zombies.callAll("animations.add", "animations", "down", [0, 1, 2, 3], 10, true);
     zombies.callAll("animations.add", "animations", "left", [15, 14, 13, 12], 10, true);
     zombies.callAll("animations.add", "animations", "right", [8, 9, 10, 11], 10, true);
-    //zombies.callAll('events.onOutOfBounds.add', 'events.onOutOfBounds', killZombie, this);
-    //zombies.setAll('checkWorldBounds', true);
+    //zombies.callAll("events.onOutOfBounds.add", "events.onOutOfBounds", killZombie, this);
+    //zombies.setAll("checkWorldBounds", true);
 
 }
 
@@ -99,7 +99,7 @@ function create() {
 
     createSprites();
 
-    shootAudio = game.add.audio('shoot');
+    shootAudio = game.add.audio("shoot");
 
     // Comment took from: https://phaser.io/examples/v2/audio/sound-complete
     // Being mp3 files these take time to decode, so we can't play them instantly
@@ -112,7 +112,7 @@ function create() {
 
     john.frame = 0;
 
-    scoreText = game.add.text(20, 560, 'Score: ', {font: "15px Arial", fill: "#ffffff"});
+    scoreText = game.add.text(20, 560, "Score: ", {font: "15px Arial", fill: "#ffffff"});
 
 }
 
@@ -141,19 +141,19 @@ function updatePlayer(){
     if (cursors.left.isDown){
         gameState.lastPressedButton = "left";
         john.body.velocity.x = -200; // moves left
-        john.animations.play('left');
+        john.animations.play("left");
     } else if (cursors.right.isDown){
         gameState.lastPressedButton = "right";
         john.body.velocity.x = 200; // moves down
-        john.animations.play('right');
+        john.animations.play("right");
     } else if (cursors.up.isDown){
         gameState.lastPressedButton = "up";
         john.body.velocity.y = -200; // moves down
-        john.animations.play('up');
+        john.animations.play("up");
     } else if (cursors.down.isDown){
         gameState.lastPressedButton = "down";
         john.body.velocity.y = 200; // moves down
-        john.animations.play('down');
+        john.animations.play("down");
     } else {
         john.animations.stop();
         john.frame = gameState.keySpriteMap[gameState.lastPressedButton];
@@ -293,7 +293,7 @@ function killZombie (bullet, zombie) {
 function shoot(){
     var bullet = bullets.getFirstExists(false);
     if (bullet){
-        bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character's chest
+        bullet.reset(john.x + 10, john.y + 25); // aproximatelly from the middle of the main character"s chest
         setBulletBodyVelocity(bullet, gameState.lastPressedButton)
         shootAudio.play();
     }
