@@ -89,8 +89,9 @@ function createWall(wallGroup, spriteId, x, y, width, height){
     var wall = wallGroup.create(x, y, spriteId);
     wall.body.immovable = true;
     wall.scale.x = width;
-    wall.scale.y = height;    
+    wall.scale.y = height;  
     wall.tint = 0xff0000;
+    wall.visible = false; 
 }
 
 function create() {
